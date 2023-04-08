@@ -4,52 +4,6 @@ const resultsPage = document.querySelector('#results-page');
 const usernameForm = usernamePage.querySelector('#username-form');
 const username = usernamePage.querySelector('#username');
 
-const urls = {
-	archiveList: (username) =>
-		`https://api.chess.com/pub/player/${username}/games/archives`,
-};
-
-async function chesscomGames() {
-	let archives;
-	try {
-		archives = await axios.get(urls.archiveList(username.value));
-	} catch (error) {
-		console.error(error);
-	}
-	const allGames = [];
-	for (const month of archives.data.archives) {
-		try {
-			const games = await axios.get(month);
-			allGames.push(games.data.games);
-		} catch (error) {
-			console.error(error);
-		}
-	}
-
-	return allGames.flat(1);
-}
-
-usernameForm.addEventListener('submit', async (event) => {
-	event.preventDefault();
-
-	const rawGames = await chesscomGames();
-
-	const games = new AllGames(
-		rawGames.reduce((acc, game) => {
-			try {
-				return [...acc, new Game(game, username.value)];
-			} catch (error) {
-				if (error.message === 'Skip') {
-					return acc;
-				}
-				throw new Error(error.message);
-			}
-		}, []),
-		'filter-form'
-	);
-	console.log(games);
-});
-
 class Game {
 	constructor(rawGame, username) {
 		this.#skip(rawGame);
@@ -177,12 +131,9 @@ class Game {
 }
 
 class AllGames {
-	constructor(games, filterId) {
-		this.games = games;
-		this.filter = new Filter(filterId, this.games);
-		this.results()();
-		const filter = resultsPage.querySelector(`#${filterId}`);
-		filter.addEventListener('submit', this.results());
+	constructor(filterId) {
+		this.games = new Map();
+		this.filterId = filterId;
 	}
 
 	results() {
@@ -190,13 +141,18 @@ class AllGames {
 		return (event) => {
 			if (event) event.preventDefault();
 			const [allGames, allMoves] = that.filter.allMoves('you');
-			if (allMoves.length === 0) {
-				console.log('0 moves');
-				return;
-			}
 			new GameCalculators(allGames).calcAll();
 			new MoveCalculators(allMoves).calcAll();
 		};
+	}
+
+	addPlayer(username, games) {
+		this.games.set(username, games);
+
+		this.filter = new Filter(this.filterId, this.games);
+		this.results()();
+		const filter = resultsPage.querySelector(`#${this.filterId}`);
+		filter.addEventListener('submit', this.results());
 	}
 }
 
@@ -215,30 +171,40 @@ class GameCalculators {
 		]);
 		resultsPage.querySelector('#game-data').replaceChildren(table.container);
 
-		const row = ['cm_9000'];
-		for (const calculator of allCalculators) {
-			row.push(this[calculator]());
+		for (const [player, games] of this.games) {
+			const row = [player];
+			for (const calculator of allCalculators) {
+				if (games.length === 0) {
+					if (calculator === 'totalGames') {
+						row.push(0);
+					} else {
+						row.push('N/A');
+					}
+					continue;
+				}
+				row.push(this[calculator](games));
+			}
+			table.addRow(row);
 		}
-		table.addRow(row);
 	}
 
-	totalGames() {
-		return this.games.length;
+	totalGames(games) {
+		return games.length;
 	}
 
-	averageMoves() {
+	averageMoves(games) {
 		const averageMoves = round(
-			this.games.reduce((acc, game) => {
+			games.reduce((acc, game) => {
 				return acc + game.you.moves.length;
-			}, 0) / this.games.length,
+			}, 0) / games.length,
 			1
 		);
 		return averageMoves;
 	}
 
-	medianMoves() {
+	medianMoves(games) {
 		const medianMoves = round(
-			median(this.games, (a, b) => {
+			median(games, (a, b) => {
 				return a.you.moves.length - b.you.moves.length;
 			}).you.moves.length
 		);
@@ -247,7 +213,7 @@ class GameCalculators {
 }
 class MoveCalculators {
 	constructor(allMoves) {
-		this.allMoves = allMoves;
+		this.moves = allMoves;
 	}
 
 	calcAll() {
@@ -266,48 +232,52 @@ class MoveCalculators {
 			'Premove Percent',
 		]);
 		resultsPage.querySelector('#move-data').replaceChildren(table.container);
-		table.addRow(['cm_9000', 1, 2, 3, 4]);
 
-		const row = ['123456789012345'];
-		for (const calculator of singleValueCalculator) {
-			row.push(this[calculator]());
+		for (const [player, moves] of this.moves) {
+			const row = [player];
+			for (const calculator of singleValueCalculator) {
+				if (moves.length === 0) {
+					row.push('N/A');
+					continue;
+				}
+				row.push(this[calculator](moves));
+			}
+			table.addRow(row);
 		}
-		table.addRow(row);
-		for (const graph of graphs) {
-			this[graph]();
-		}
+		// for (const graph of graphs) {
+		// 	this[graph]();
+		// }
 	}
 
-	totalMoves() {
-		return this.allMoves.length;
+	totalMoves(moves) {
+		return moves.length;
 	}
 
-	averageTimePerMove() {
+	averageTimePerMove(moves) {
 		const averageTime = round(
-			this.allMoves.reduce((acc, move) => acc + move.timeDiff, 0) /
-				this.allMoves.length,
+			moves.reduce((acc, move) => acc + move.timeDiff, 0) / moves.length,
 			1
 		);
 		return averageTime;
 	}
 
-	medianTimePerMove() {
+	medianTimePerMove(moves) {
 		const medianTimePerMove = round(
-			median(this.allMoves, (a, b) => a.timeDiff - b.timeDiff).timeDiff,
+			median(moves, (a, b) => a.timeDiff - b.timeDiff).timeDiff,
 			1
 		);
 		return medianTimePerMove;
 	}
 
-	premovePercent() {
+	premovePercent(moves) {
 		const premovePercent =
-			(this.allMoves.reduce((acc, move) => {
+			(moves.reduce((acc, move) => {
 				if (move.timeDiff <= 0.1) {
 					return acc + 1;
 				}
 				return acc;
 			}, 0) /
-				this.allMoves.length) *
+				moves.length) *
 			100;
 		return round(premovePercent) + '%';
 	}
@@ -370,37 +340,42 @@ class MoveCalculators {
 class Filter {
 	constructor(containerId, games) {
 		this.container = document.querySelector(`#${containerId}`);
-		// this.container.innerHTML = '';
+		this.container.innerHTML = '';
 		this.games = games;
-		this.#addSubOption('playerSubOption', [
-			['cm_9000', ['cm_9000', 'oponent']],
-			['bob', [1, 2, 3, 4, 5, 6]],
-		]);
+		this.#addMultiSelect('playerMultiSelect', Array.from(this.games.keys()));
 		this.#addToggle('oponentToggle', 'Show Oponents', 'oponent-checkbox');
-		this.#addMultiSelect('playerMultiSelect', ['cm_9000', 'bob']);
 		this.#addMultiSelect('colorMultiSelect', ['White', 'Black']);
 		this.#addSubOption('terminationSubOption', this.#allTerminations);
 		this.#addSubOption('timeControlSubOption', this.#allTimeControls);
 		this.#addSlider('ratingSlider', ...this.#ratingRange);
 		this.#addSlider('moveNumberSlider', ...this.#moveNumberRange);
 		this.#addSlider('timeLeftSlider', ...this.#timeLeftRange);
+		const button = document.createElement('button');
+		button.innerText = 'filter';
+		this.container.appendChild(button);
 	}
 
-	allMoves(player) {
-		const allMoves = [];
-		const allGames = [];
-		const getMoves = (game) => {
-			if (this.gameConditions(game)) {
-				allGames.push(game);
-				for (const move of game[player].moves) {
-					if (this.moveConditions(move)) {
-						allMoves.push(move);
+	allMoves() {
+		const allGames = new Map();
+		const allMoves = new Map();
+
+		for (const player of this.playerMultiSelect.values) {
+			const games = [];
+			const moves = [];
+			const getMoves = (game) => {
+				if (this.gameConditions(game)) {
+					games.push(game);
+					for (const move of game.you.moves) {
+						if (this.moveConditions(move)) {
+							moves.push(move);
+						}
 					}
 				}
-			}
-		};
-
-		this.#loopGames(getMoves);
+			};
+			this.#loopGames(getMoves, [player]);
+			allGames.set(player, games);
+			allMoves.set(player, moves);
+		}
 
 		return [allGames, allMoves];
 	}
@@ -429,7 +404,11 @@ class Filter {
 	}
 
 	filterColor(game) {
-		return this.colorMultiSelect.values.includes(game.colorPlayed);
+		return this.colorMultiSelect.values
+			.map((color) => {
+				return color.toLowerCase();
+			})
+			.includes(game.colorPlayed);
 	}
 
 	filterTermination(game) {
@@ -495,9 +474,16 @@ class Filter {
 		this.container.appendChild(this[name].container);
 	}
 
-	#loopGames(func) {
-		for (const game of this.games) {
-			func(game);
+	#loopGames(func, players = false) {
+		if (!players) {
+			players = Array.from(this.games.keys());
+		}
+		console.log(players);
+		for (const [player, games] of this.games) {
+			if (!players.includes(player)) continue;
+			for (const game of games) {
+				func(game);
+			}
 		}
 	}
 
@@ -780,7 +766,7 @@ class MultiSelect {
 		const values = [];
 		for (let option of this.selectInput.children) {
 			if (option.selected) {
-				values.push(option.value.toLowerCase());
+				values.push(option.value);
 			}
 		}
 		return values;
@@ -907,3 +893,50 @@ class RangeSlider {
 		return this.slider.get();
 	}
 }
+
+const allGames = new AllGames('filter-form');
+
+const urls = {
+	archiveList: (username) =>
+		`https://api.chess.com/pub/player/${username}/games/archives`,
+};
+
+async function chesscomGames() {
+	let archives;
+	try {
+		archives = await axios.get(urls.archiveList(username.value));
+	} catch (error) {
+		console.error(error);
+	}
+	const allGames = [];
+	for (const month of archives.data.archives) {
+		try {
+			const games = await axios.get(month);
+			allGames.push(games.data.games);
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	return allGames.flat(1);
+}
+
+usernameForm.addEventListener('submit', async (event) => {
+	event.preventDefault();
+
+	const rawGames = await chesscomGames();
+	allGames.addPlayer(
+		username.value,
+		rawGames.reduce((acc, game) => {
+			try {
+				return [...acc, new Game(game, username.value)];
+			} catch (error) {
+				if (error.message === 'Skip') {
+					return acc;
+				}
+				throw new Error(error.message);
+			}
+		}, [])
+	);
+	console.log(allGames.games);
+});
