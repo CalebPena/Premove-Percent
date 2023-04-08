@@ -370,12 +370,14 @@ class MoveCalculators {
 class Filter {
 	constructor(containerId, games) {
 		this.container = document.querySelector(`#${containerId}`);
+		// this.container.innerHTML = '';
 		this.games = games;
 		this.#addSubOption('playerSubOption', [
 			['cm_9000', ['cm_9000', 'oponent']],
 			['bob', [1, 2, 3, 4, 5, 6]],
 		]);
-		this.#addMultiSelect('colorMultiSelect', ['you', 'oponent']);
+		this.#addToggle('oponentToggle', 'Show Oponents', 'oponent-checkbox');
+		this.#addMultiSelect('playerMultiSelect', ['cm_9000', 'bob']);
 		this.#addMultiSelect('colorMultiSelect', ['White', 'Black']);
 		this.#addSubOption('terminationSubOption', this.#allTerminations);
 		this.#addSubOption('timeControlSubOption', this.#allTimeControls);
@@ -471,6 +473,11 @@ class Filter {
 	filterTimeLeft(move) {
 		const range = this.timeLeftSlider.values;
 		return Filter.inRange(range[0], range[1], Number(move.timeLeft));
+	}
+
+	#addToggle(name, title, checkboxId) {
+		this[name] = new Toggle(title, checkboxId);
+		this.container.appendChild(this[name].container);
 	}
 
 	#addMultiSelect(name, options) {
@@ -717,6 +724,24 @@ class LineGraph {
 	}
 }
 
+class Toggle {
+	constructor(title, toggleId) {
+		this.container = document.createElement('div');
+		this.label = document.createElement('label');
+		this.label.innerText = title;
+		this.label.setAttribute('for', toggleId);
+		this.checkbox = document.createElement('input');
+		this.checkbox.id = toggleId;
+		this.checkbox.setAttribute('type', 'checkbox');
+		this.container.appendChild(this.label);
+		this.container.appendChild(this.checkbox);
+	}
+
+	get values() {
+		return this.checkbox.checked;
+	}
+}
+
 class MultiSelect {
 	constructor(title, options) {
 		this.container = document.createElement('div');
@@ -771,18 +796,18 @@ class SubSelect {
 		this.selectInput.classList.add('hide');
 		this.container.appendChild(this.selectInput);
 		for (const [broadOption, subOptions] of options) {
-			const optionContainer = document.createElement('div')
+			const optionContainer = document.createElement('div');
 			const broadOptionContainer = document.createElement('li');
 			const broadOptionHtml = document.createElement('button');
 			broadOptionContainer.appendChild(broadOptionHtml);
-			broadOptionContainer.appendChild(optionContainer)
+			broadOptionContainer.appendChild(optionContainer);
 			broadOptionHtml.innerText = broadOption;
 			broadOptionHtml.classList.add('broadOption', 'selected');
 			this.broadSelections.push(broadOption);
 			const newOptions = [];
 			for (const value of subOptions) {
 				const subOptionHtml = document.createElement('button');
-				optionContainer.appendChild(subOptionHtml)
+				optionContainer.appendChild(subOptionHtml);
 				subOptionHtml.innerText = value;
 				subOptionHtml.classList.add('selected');
 				const subOptionHidden = document.createElement('option');
