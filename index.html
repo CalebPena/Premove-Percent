@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Belts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.css"
+    integrity="sha512-MKxcSu/LDtbIYHBNAWUQwfB3iVoG9xeMCm32QV5hZ/9lFaQZJVaXfz9aFa0IZExWzCpm7OWvp9zq9gVip/nLMg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <h1>Speedbelt</h1>
+    <main>
+        <div id="username-page">
+            <form id="username-form">
+                <label for="username"></label>
+                <input type="text" value="cm_9000" id="username">
+                <button type="submit">Find</button>
+            </form>
+        </div>
+        <div id="results-page">
+            <form id="filter-form">
+                <input type="text">
+                <button id="calculate">Calculate</button>
+            </form>
+            <div id="game-data"></div>
+            <div id="move-data">
+                <div id="total-moves"></div>
+                <div id="average-time-move"></div>
+                <div id="median-time-move"></div>
+                <div id="premove-percent"></div>
+                <div id="time-per-move" class="graph"></div>
+                <div id="time-vs-move-number" class="graph"></div>
+                <div id="time-vs-time" class="graph"></div>
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.plot.ly/plotly-2.18.2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"
+        integrity="sha512-UOJe4paV6hYWBnS0c9GnIRH8PLm2nFK22uhfAvsTIqd3uwnWsVri1OPn5fJYdLtGY3wB11LGHJ4yPU1WFJeBYQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

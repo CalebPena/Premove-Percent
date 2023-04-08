@@ -1,0 +1,38 @@
+* {
+    box-sizing: border-box;
+}
+
+table {
+    border-spacing: 0;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 0 .5rem;
+    margin: 0;
+}
+
+[aria-hidden] {
+    display: none;
+}
+
+.hide {
+    display: none;
+}
+
+.multiselect-option {
+    display: inline-block;
+    background-color: #caf0f8;
+    color: #0077b6;
+    padding: .5rem;
+    margin: .5rem;
+}
+
+.multiselect-option:hover {
+    cursor: pointer;
+}
+
+.selected {
+    background-color: #0077b6;
+    color: #caf0f8;
+}
