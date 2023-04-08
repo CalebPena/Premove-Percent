@@ -362,6 +362,8 @@ class Filter {
 		for (const player of this.playerMultiSelect.values) {
 			const games = [];
 			const moves = [];
+			const oponentGames = []
+			const oponentMoves = []
 			const getMoves = (game) => {
 				if (this.gameConditions(game)) {
 					games.push(game);
@@ -370,11 +372,23 @@ class Filter {
 							moves.push(move);
 						}
 					}
+					if (this.oponentToggle.values) {
+						oponentGames.push(game)
+						for (const move of game.oponent.moves) {
+							if (this.moveConditions(move)) {
+								oponentMoves.push(move);
+							}
+					}
+					}
 				}
 			};
 			this.#loopGames(getMoves, [player]);
 			allGames.set(player, games);
 			allMoves.set(player, moves);
+			if (this.oponentToggle.values) {
+				allGames.set(`${player}'s oponents`, oponentGames)
+				allMoves.set(`${player}'s oponents`, oponentMoves)
+			}
 		}
 
 		return [allGames, allMoves];
