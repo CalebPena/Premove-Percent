@@ -248,9 +248,9 @@ class MoveCalculators {
 			}
 			table.addRow(row);
 		}
-		// for (const graph of graphs) {
-		// 	this[graph]();
-		// }
+		for (const graph of graphs) {
+			this[graph]();
+		}
 	}
 
 	totalMoves(moves) {
@@ -287,57 +287,66 @@ class MoveCalculators {
 	}
 
 	moveTime() {
-		const diffs = [];
-		for (let move of this.allMoves) {
-			diffs.push(move.timeDiff);
+		const lines = [];
+		for (const player of this.moves) {
+			const moves = player[1].map((move) => move.timeDiff);
+			lines.push({ data: moves, name: player[0] });
 		}
 		const container = document.createElement('div');
 		container.id = 'time-per-move';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new Histogram('time-per-move', diffs);
+		new BoxPlot('time-per-move', lines);
 	}
 
 	timeVsMoveNumber() {
-		const averages = {};
-		for (let move of this.allMoves) {
-			if (!averages[move.moveNumber]) {
-				averages[move.moveNumber] = { total: 0, count: 0 };
+		const lines = [];
+		for (const player of this.moves) {
+			const averages = {};
+			for (let move of player[1]) {
+				if (!averages[move.moveNumber]) {
+					averages[move.moveNumber] = { total: 0, count: 0 };
+				}
+				averages[move.moveNumber].total += +move.timeDiff;
+				averages[move.moveNumber].count += 1;
 			}
-			averages[move.moveNumber].total += move.timeDiff;
-			averages[move.moveNumber].count += 1;
-		}
-		const x = [];
-		const y = [];
-		for (let [moveNumber, average] of Object.entries(averages)) {
-			x.push(moveNumber);
-			y.push(average.total / average.count);
+			const x = [];
+			const y = [];
+			for (let [moveNumber, average] of Object.entries(averages)) {
+				x.push(+moveNumber);
+				y.push(average.total / average.count);
+			}
+			lines.push({x: x, y: y, name: player[0]});
 		}
 		const container = document.createElement('div');
 		container.id = 'time-vs-move-number';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new LineGraph('time-vs-move-number', x, y);
+		new LineGraph('time-vs-move-number', lines);
 	}
 
 	timeVsTime() {
-		const averages = {};
-		for (let move of this.allMoves) {
-			const timeLeft = Math.floor(move.timeLeft);
-			if (!averages[timeLeft]) {
-				averages[timeLeft] = { total: 0, count: 0 };
+		const lines = [];
+		for (const player of this.moves) {
+			const averages = {};
+			for (let move of player[1]) {
+				const timeLeft = Math.floor(move.timeLeft);
+				if (!averages[timeLeft]) {
+					averages[timeLeft] = { total: 0, count: 0 };
+				}
+				averages[timeLeft].total += +move.timeDiff;
+				averages[timeLeft].count += 1;
 			}
-			averages[timeLeft].total += move.timeDiff;
-			averages[timeLeft].count += 1;
-		}
-		const x = [];
-		const y = [];
-		for (let [moveNumber, average] of Object.entries(averages)) {
-			x.push(moveNumber);
-			y.push(average.total / average.count);
+			const x = [];
+			const y = [];
+			for (let [moveNumber, average] of Object.entries(averages)) {
+				x.push(+moveNumber);
+				y.push(average.total / average.count);
+			}
+			lines.push({x: x, y: y, name: player[0]});
 		}
 		const container = document.createElement('div');
 		container.id = 'time-vs-time';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new LineGraph('time-vs-time', x, y);
+		new LineGraph('time-vs-time', lines);
 	}
 }
 
@@ -691,35 +700,41 @@ class Table {
 	}
 }
 
-class Histogram {
-	constructor(id, list) {
-		const trace = {
-			x: list,
-			type: 'histogram',
-			xbins: {
-				end: 60,
-				size: 1,
-				start: 0,
-			},
+class BoxPlot {
+	constructor(id, players) {
+		const data = [];
+		for (const player of players) {
+			const trace = {
+				x: player.data,
+				boxpoints: false,
+				type: 'box',
+				name: player.name,
+			};
+
+			data.push(trace);
+		}
+
+		const layout = {
+			title: 'Horizontal Box Plot',
 		};
 
-		const data = [trace];
-		Plotly.newPlot(id, data, {
-			displayModeBar: false,
-			staticPlot: true,
-		});
+		Plotly.newPlot(id, data, layout);
 	}
 }
 
 class LineGraph {
-	constructor(id, x, y) {
-		const trace1 = {
-			x: x,
-			y: y,
-			type: 'scatter',
-		};
+	constructor(id, players) {
+		const data = [];
+		for (const player of players) {
+			const trace = {
+				x: player.x,
+				y: player.y,
+				type: 'scatter',
+				name: player.name
+			};
 
-		const data = [trace1];
+			data.push(trace);
+		}
 		Plotly.newPlot(id, data, {
 			displayModeBar: false,
 			staticPlot: true,
