@@ -237,7 +237,11 @@ class MoveCalculators {
 			const row = [player];
 			for (const calculator of singleValueCalculator) {
 				if (moves.length === 0) {
-					row.push('N/A');
+					if (calculator === 'totalMoves') {
+						row.push(0);
+					} else {
+						row.push('N/A');
+					}
 					continue;
 				}
 				row.push(this[calculator](moves));
@@ -362,8 +366,8 @@ class Filter {
 		for (const player of this.playerMultiSelect.values) {
 			const games = [];
 			const moves = [];
-			const oponentGames = []
-			const oponentMoves = []
+			const oponentGames = [];
+			const oponentMoves = [];
 			const getMoves = (game) => {
 				if (this.gameConditions(game)) {
 					games.push(game);
@@ -373,12 +377,12 @@ class Filter {
 						}
 					}
 					if (this.oponentToggle.values) {
-						oponentGames.push(game)
+						oponentGames.push(game);
 						for (const move of game.oponent.moves) {
 							if (this.moveConditions(move)) {
 								oponentMoves.push(move);
 							}
-					}
+						}
 					}
 				}
 			};
@@ -386,8 +390,8 @@ class Filter {
 			allGames.set(player, games);
 			allMoves.set(player, moves);
 			if (this.oponentToggle.values) {
-				allGames.set(`${player}'s oponents`, oponentGames)
-				allMoves.set(`${player}'s oponents`, oponentMoves)
+				allGames.set(`${player}'s oponents`, oponentGames);
+				allMoves.set(`${player}'s oponents`, oponentMoves);
 			}
 		}
 
@@ -492,7 +496,6 @@ class Filter {
 		if (!players) {
 			players = Array.from(this.games.keys());
 		}
-		console.log(players);
 		for (const [player, games] of this.games) {
 			if (!players.includes(player)) continue;
 			for (const game of games) {
