@@ -7,6 +7,7 @@ const username = usernamePage.querySelector('#username');
 class Game {
 	constructor(rawGame, username) {
 		this.#skip(rawGame);
+		this.rawGame = rawGame;
 
 		const white = rawGame.white;
 		const black = rawGame.black;
@@ -14,6 +15,7 @@ class Game {
 			this.colorPlayed = 'white';
 			this.you = white;
 			this.oponent = black;
+			this.elo = Number(rawGame.blackelo);
 		} else if (black.username === username) {
 			this.colorPlayed = 'black';
 			this.you = black;
@@ -47,16 +49,28 @@ class Game {
 					previousTimeYou - (timeLeft - this.increment),
 					2
 				);
+				const oponentTimeSpent = this.oponent.moves.at(-1)?.timeDiff ?? null;
 				if (timeDiff < 0) continue;
-				this.you.moves.push({ moveNumber, timeDiff, timeLeft });
+				this.you.moves.push({
+					moveNumber,
+					timeDiff,
+					timeLeft,
+					oponentTimeSpent,
+				});
 				previousTimeYou = timeLeft;
 			} else {
 				const timeDiff = round(
 					previousTimeOponent - (timeLeft - this.increment),
 					2
 				);
+				const oponentTimeSpent = this.you.moves.at(-1)?.timeDiff ?? null;
 				if (timeDiff < 0) continue;
-				this.oponent.moves.push({ moveNumber, timeDiff, timeLeft });
+				this.oponent.moves.push({
+					moveNumber,
+					timeDiff,
+					timeLeft,
+					oponentTimeSpent,
+				});
 				previousTimeOponent = timeLeft;
 			}
 		}
@@ -223,7 +237,12 @@ class MoveCalculators {
 			'medianTimePerMove',
 			'premovePercent',
 		];
-		const graphs = ['moveTime', 'timeVsMoveNumber', 'timeVsTime'];
+		const graphs = [
+			'moveTime',
+			'timeVsMoveNumber',
+			'timeVsTime',
+			'timeVsOponentTimeSpent',
+		];
 		const table = new Table([
 			'Player',
 			'Total Moves',
@@ -315,7 +334,7 @@ class MoveCalculators {
 				x.push(+moveNumber);
 				y.push(average.total / average.count);
 			}
-			lines.push({x: x, y: y, name: player[0]});
+			lines.push({ x: x, y: y, name: player[0] });
 		}
 		const container = document.createElement('div');
 		container.id = 'time-vs-move-number';
@@ -341,12 +360,42 @@ class MoveCalculators {
 				x.push(+moveNumber);
 				y.push(average.total / average.count);
 			}
-			lines.push({x: x, y: y, name: player[0]});
+			lines.push({ x: x, y: y, name: player[0] });
 		}
 		const container = document.createElement('div');
 		container.id = 'time-vs-time';
 		resultsPage.querySelector('#move-data').appendChild(container);
 		new LineGraph('time-vs-time', lines);
+	}
+
+	timeVsOponentTimeSpent() {
+		console.log(0);
+		const lines = [];
+		for (const player of this.moves) {
+			const averages = {};
+			for (const move of player[1]) {
+				const oponentTimeSpent = Math.floor(move.oponentTimeSpent);
+				if (!oponentTimeSpent) {
+					continue;
+				}
+				if (!averages[oponentTimeSpent]) {
+					averages[oponentTimeSpent] = { total: 0, count: 0 };
+				}
+				averages[oponentTimeSpent].total += +move.timeDiff;
+				averages[oponentTimeSpent].count += 1;
+			}
+			const x = [];
+			const y = [];
+			for (let [oponentTimeSpent, average] of Object.entries(averages)) {
+				x.push(+oponentTimeSpent);
+				y.push(average.total / average.count);
+			}
+			lines.push({ x: x, y: y, name: player[0] });
+		}
+		const container = document.createElement('div');
+		container.id = 'time-vs-oponent-time-spent';
+		resultsPage.querySelector('#move-data').appendChild(container);
+		new LineGraph('time-vs-oponent-time-spent', lines);
 	}
 }
 
@@ -730,7 +779,7 @@ class LineGraph {
 				x: player.x,
 				y: player.y,
 				type: 'scatter',
-				name: player.name
+				name: player.name,
 			};
 
 			data.push(trace);
@@ -970,5 +1019,6 @@ usernameForm.addEventListener('submit', async (event) => {
 			}
 		}, [])
 	);
+
 	console.log(allGames.games);
 });
