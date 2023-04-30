@@ -369,7 +369,6 @@ class MoveCalculators {
 	}
 
 	timeVsOponentTimeSpent() {
-		console.log(0);
 		const lines = [];
 		for (const player of this.moves) {
 			const averages = {};
@@ -989,15 +988,23 @@ async function chesscomGames() {
 	} catch (error) {
 		console.error(error);
 	}
+	const progressBar = document.querySelector('progress')
+	progressBar.setAttribute('max', archives.data.archives.length)
+	let value = 0
+	progressBar.setAttribute('value', value)
+	progressBar.removeAttribute('aria-hidden')
 	const allGames = [];
 	for (const month of archives.data.archives) {
 		try {
 			const games = await axios.get(month);
 			allGames.push(games.data.games);
+			value += 1
+			progressBar.setAttribute('value', value)
 		} catch (error) {
 			console.error(error);
 		}
 	}
+	progressBar.toggleAttribute('aria-hidden')
 
 	return allGames.flat(1);
 }

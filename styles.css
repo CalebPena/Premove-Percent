@@ -2,12 +2,21 @@
     box-sizing: border-box;
 }
 
+body {
+    background-color: #1B4965;
+    color: #CAE9FF;
+}
+
+h1 {
+    color: #CAE9FF;
+}
+
 table {
     border-spacing: 0;
 }
 
 th, td {
-    border: 1px solid black;
+    border: 1px solid #CAE9FF;
     padding: 0 .5rem;
     margin: 0;
 }
@@ -18,6 +27,26 @@ th, td {
 
 .hide {
     display: none;
+}
+
+progress {
+  border-radius: 7px; 
+  width: 100%;
+  box-shadow: 2px 1px 4px rgba( 0, 0, 0, 0.2 ) inset;
+}
+progress::-webkit-progress-bar {
+  background-color: #ffffff;
+  border-radius: 7px;
+}
+progress::-webkit-progress-value {
+  background-color: #5FA8D3;
+  border-radius: 7px;
+}
+
+#username-form {
+    width: fit-content;
+    text-align: center;
+    margin: auto;
 }
 
 .multiselect-option {
