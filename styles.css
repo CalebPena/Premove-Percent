@@ -34,10 +34,12 @@ progress {
   width: 100%;
   box-shadow: 2px 1px 4px rgba( 0, 0, 0, 0.2 ) inset;
 }
+
 progress::-webkit-progress-bar {
-  background-color: #ffffff;
+  background-color: #FFFFFF;
   border-radius: 7px;
 }
+
 progress::-webkit-progress-value {
   background-color: #5FA8D3;
   border-radius: 7px;
@@ -47,6 +49,13 @@ progress::-webkit-progress-value {
     width: fit-content;
     text-align: center;
     margin: auto;
+}
+
+#filter-form {
+    width: 80%;
+    padding: 1rem;
+    margin: auto;
+    border: 1px solid black;
 }
 
 .multiselect-option {
@@ -64,4 +73,42 @@ progress::-webkit-progress-value {
 .selected {
     background-color: #0077b6;
     color: #caf0f8;
+}
+
+.range-slider {
+    width: 80%;
+    margin: 2rem auto;
+}
+
+.range-slider-header {
+    text-align: center;
+    margin-top: 0;
+}
+
+
+.waiting {
+  height: 1rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  width: 100%;
+  overflow: hidden;
+}
+
+.waiting-value {
+  width: 100%;
+  height: 100%;
+  background-color: #5fa8d3;
+  animation: indeterminateAnimation 1s infinite linear;
+  transform-origin: 0% 50%;
+}
+
+@keyframes indeterminateAnimation {
+  0% {
+    transform:  translateX(0) scaleX(0);
+  }
+  40% {
+    transform:  translateX(0) scaleX(0.4);
+  }
+  100% {
+    transform:  translateX(100%) scaleX(0.5);
+  }
 }

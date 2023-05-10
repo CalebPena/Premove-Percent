@@ -152,11 +152,22 @@ class AllGames {
 
 	results() {
 		const that = this;
+		const progressBar = document.createElement('div');
+		progressBar.classList.add('waiting');
+		const bar = document.createElement('div');
+		bar.classList.add('waiting-value');
+		progressBar.appendChild(bar);
+		const filter = resultsPage.querySelector(`#${this.filterId}`);
 		return (event) => {
 			if (event) event.preventDefault();
-			const [allGames, allMoves] = that.filter.allMoves('you');
-			new GameCalculators(allGames).calcAll();
-			new MoveCalculators(allMoves).calcAll();
+			filter.appendChild(progressBar);
+			setTimeout(() => {
+				// I don't know why, but the progress bar does not work without the setTimeout
+				const [allGames, allMoves] = that.filter.allMoves();
+				new GameCalculators(allGames).calcAll();
+				new MoveCalculators(allMoves).calcAll();
+				filter.removeChild(progressBar);
+			})
 		};
 	}
 
@@ -267,6 +278,7 @@ class MoveCalculators {
 			}
 			table.addRow(row);
 		}
+
 		for (const graph of graphs) {
 			this[graph]();
 		}
@@ -403,14 +415,34 @@ class Filter {
 		this.container = document.querySelector(`#${containerId}`);
 		this.container.innerHTML = '';
 		this.games = games;
-		this.#addMultiSelect('playerMultiSelect', Array.from(this.games.keys()));
+		this.#addMultiSelect(
+			'playerMultiSelect',
+			'Players:',
+			Array.from(this.games.keys())
+		);
 		this.#addToggle('oponentToggle', 'Show Oponents', 'oponent-checkbox');
-		this.#addMultiSelect('colorMultiSelect', ['White', 'Black']);
-		this.#addSubOption('terminationSubOption', this.#allTerminations);
-		this.#addSubOption('timeControlSubOption', this.#allTimeControls);
-		this.#addSlider('ratingSlider', ...this.#ratingRange);
-		this.#addSlider('moveNumberSlider', ...this.#moveNumberRange);
-		this.#addSlider('timeLeftSlider', ...this.#timeLeftRange);
+		this.#addMultiSelect('colorMultiSelect', 'Color:', ['White', 'Black']);
+		this.#addSubOption(
+			'terminationSubOption',
+			'Result:',
+			this.#allTerminations
+		);
+		this.#addSubOption(
+			'timeControlSubOption',
+			'Time Control:',
+			this.#allTimeControls
+		);
+		this.#addSlider('ratingSlider', 'Rating', ...this.#ratingRange);
+		this.#addSlider(
+			'moveNumberSlider',
+			'Move Number',
+			...this.#moveNumberRange
+		);
+		this.#addSlider(
+			'timeLeftSlider',
+			'Time Left (Seconds)',
+			...this.#timeLeftRange
+		);
 		const button = document.createElement('button');
 		button.innerText = 'filter';
 		this.container.appendChild(button);
@@ -534,18 +566,18 @@ class Filter {
 		this.container.appendChild(this[name].container);
 	}
 
-	#addMultiSelect(name, options) {
-		this[name] = new MultiSelect('', options);
+	#addMultiSelect(name, title, options) {
+		this[name] = new MultiSelect(title, options);
 		this.container.appendChild(this[name].container);
 	}
 
-	#addSubOption(name, options) {
-		this[name] = new SubSelect('', options);
+	#addSubOption(name, title, options) {
+		this[name] = new SubSelect(title, options);
 		this.container.appendChild(this[name].container);
 	}
 
-	#addSlider(name, min, max) {
-		this[name] = new RangeSlider('', min, max);
+	#addSlider(name, title, min, max) {
+		this[name] = new RangeSlider(title, min, max);
 		this.container.appendChild(this[name].container);
 	}
 
@@ -811,6 +843,10 @@ class Toggle {
 class MultiSelect {
 	constructor(title, options) {
 		this.container = document.createElement('div');
+		const header = document.createElement('h3');
+		header.classList.add('multi-select-header');
+		header.innerText = title;
+		this.container.innerText = title;
 		const optionContainer = document.createElement('div');
 		this.selectInput = document.createElement('select');
 		this.selectInput.multiple = true;
@@ -855,7 +891,11 @@ class MultiSelect {
 
 class SubSelect {
 	constructor(title, options) {
-		this.container = document.createElement('ul');
+		this.container = document.createElement('div');
+		const header = document.createElement('h3');
+		header.classList.add('sub-select-header');
+		header.innerText = title;
+		this.container.appendChild(header);
 		this.broadSelections = [];
 		this.selectInput = document.createElement('select');
 		this.selectInput.multiple = true;
@@ -863,7 +903,7 @@ class SubSelect {
 		this.container.appendChild(this.selectInput);
 		for (const [broadOption, subOptions] of options) {
 			const optionContainer = document.createElement('div');
-			const broadOptionContainer = document.createElement('li');
+			const broadOptionContainer = document.createElement('div');
 			const broadOptionHtml = document.createElement('button');
 			broadOptionContainer.appendChild(broadOptionHtml);
 			broadOptionContainer.appendChild(optionContainer);
@@ -947,6 +987,11 @@ class SubSelect {
 class RangeSlider {
 	constructor(title, start, stop) {
 		this.container = document.createElement('div');
+		this.container.classList.add('range-slider');
+		const header = document.createElement('h3');
+		header.classList.add('range-slider-header');
+		header.innerText = title;
+		this.container.appendChild(header);
 		const range = document.createElement('div');
 		this.slider = noUiSlider.create(range, {
 			start: [Math.floor(start), Math.ceil(stop)],
@@ -988,23 +1033,23 @@ async function chesscomGames() {
 	} catch (error) {
 		console.error(error);
 	}
-	const progressBar = document.querySelector('progress')
-	progressBar.setAttribute('max', archives.data.archives.length)
-	let value = 0
-	progressBar.setAttribute('value', value)
-	progressBar.removeAttribute('aria-hidden')
+	const progressBar = document.querySelector('progress');
+	progressBar.setAttribute('max', archives.data.archives.length);
+	let value = 0;
+	progressBar.setAttribute('value', value);
+	progressBar.removeAttribute('aria-hidden');
 	const allGames = [];
 	for (const month of archives.data.archives) {
 		try {
 			const games = await axios.get(month);
 			allGames.push(games.data.games);
-			value += 1
-			progressBar.setAttribute('value', value)
+			value += 1;
+			progressBar.setAttribute('value', value);
 		} catch (error) {
 			console.error(error);
 		}
 	}
-	progressBar.toggleAttribute('aria-hidden')
+	progressBar.toggleAttribute('aria-hidden');
 
 	return allGames.flat(1);
 }
