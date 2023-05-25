@@ -167,7 +167,7 @@ class AllGames {
 				new GameCalculators(allGames).calcAll();
 				new MoveCalculators(allMoves).calcAll();
 				filter.removeChild(progressBar);
-			})
+			});
 		};
 	}
 
@@ -195,6 +195,9 @@ class GameCalculators {
 			'Median Moves',
 		]);
 		resultsPage.querySelector('#game-data').replaceChildren(table.container);
+		const header = document.createElement('h2');
+		header.innerText = 'Game Data:';
+		resultsPage.querySelector('#game-data').prepend(header);
 
 		for (const [player, games] of this.games) {
 			const row = [player];
@@ -262,6 +265,9 @@ class MoveCalculators {
 			'Premove Percent',
 		]);
 		resultsPage.querySelector('#move-data').replaceChildren(table.container);
+		const header = document.createElement('h2');
+		header.innerText = 'Move Data:';
+		resultsPage.querySelector('#move-data').prepend(header);
 
 		for (const [player, moves] of this.moves) {
 			const row = [player];
@@ -326,7 +332,7 @@ class MoveCalculators {
 		const container = document.createElement('div');
 		container.id = 'time-per-move';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new BoxPlot('time-per-move', lines);
+		new BoxPlot('time-per-move', lines, 'Time Per Move');
 	}
 
 	timeVsMoveNumber() {
@@ -351,7 +357,7 @@ class MoveCalculators {
 		const container = document.createElement('div');
 		container.id = 'time-vs-move-number';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new LineGraph('time-vs-move-number', lines);
+		new LineGraph('time-vs-move-number', lines, 'Time vs Move Number');
 	}
 
 	timeVsTime() {
@@ -377,7 +383,7 @@ class MoveCalculators {
 		const container = document.createElement('div');
 		container.id = 'time-vs-time';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new LineGraph('time-vs-time', lines);
+		new LineGraph('time-vs-time', lines, 'Time vs Time Left');
 	}
 
 	timeVsOponentTimeSpent() {
@@ -406,7 +412,11 @@ class MoveCalculators {
 		const container = document.createElement('div');
 		container.id = 'time-vs-oponent-time-spent';
 		resultsPage.querySelector('#move-data').appendChild(container);
-		new LineGraph('time-vs-oponent-time-spent', lines);
+		new LineGraph(
+			'time-vs-oponent-time-spent',
+			lines,
+			'Time Spent After Oponent Time Spent'
+		);
 	}
 }
 
@@ -414,6 +424,10 @@ class Filter {
 	constructor(containerId, games) {
 		this.container = document.querySelector(`#${containerId}`);
 		this.container.innerHTML = '';
+		this.container.toggleAttribute('aria-hidden', false);
+		const header = document.createElement('h2');
+		header.innerText = 'Filters:';
+		this.container.appendChild(header);
 		this.games = games;
 		this.#addMultiSelect(
 			'playerMultiSelect',
@@ -444,6 +458,7 @@ class Filter {
 			...this.#timeLeftRange
 		);
 		const button = document.createElement('button');
+		button.classList.add('filter-button');
 		button.innerText = 'filter';
 		this.container.appendChild(button);
 	}
@@ -781,7 +796,7 @@ class Table {
 }
 
 class BoxPlot {
-	constructor(id, players) {
+	constructor(id, players, title) {
 		const data = [];
 		for (const player of players) {
 			const trace = {
@@ -795,7 +810,9 @@ class BoxPlot {
 		}
 
 		const layout = {
-			title: 'Horizontal Box Plot',
+			title: title,
+			plot_bgcolor: '#0000',
+			paper_bgcolor: '#0000',
 		};
 
 		Plotly.newPlot(id, data, layout);
@@ -803,7 +820,7 @@ class BoxPlot {
 }
 
 class LineGraph {
-	constructor(id, players) {
+	constructor(id, players, title) {
 		const data = [];
 		for (const player of players) {
 			const trace = {
@@ -815,9 +832,16 @@ class LineGraph {
 
 			data.push(trace);
 		}
-		Plotly.newPlot(id, data, {
+
+		const layout = {
+			title: title,
+			plot_bgcolor: '#0000',
+			paper_bgcolor: '#0000',
+		};
+
+		Plotly.newPlot(id, data, layout, {
 			displayModeBar: false,
-			staticPlot: true,
+			// staticPlot: true,
 		});
 	}
 }
@@ -825,7 +849,9 @@ class LineGraph {
 class Toggle {
 	constructor(title, toggleId) {
 		this.container = document.createElement('div');
+		this.container.classList.add('toggle-container', 'filter');
 		this.label = document.createElement('label');
+		this.label.classList.add('toggle-label');
 		this.label.innerText = title;
 		this.label.setAttribute('for', toggleId);
 		this.checkbox = document.createElement('input');
@@ -843,11 +869,12 @@ class Toggle {
 class MultiSelect {
 	constructor(title, options) {
 		this.container = document.createElement('div');
+		this.container.classList.add('filter');
 		const header = document.createElement('h3');
-		header.classList.add('multi-select-header');
+		header.classList.add('multiselect-header');
 		header.innerText = title;
-		this.container.innerText = title;
-		const optionContainer = document.createElement('div');
+		this.container.appendChild(header);
+		const optionContainer = document.createElement('span');
 		this.selectInput = document.createElement('select');
 		this.selectInput.multiple = true;
 		this.selectInput.classList.add('hide');
@@ -892,6 +919,7 @@ class MultiSelect {
 class SubSelect {
 	constructor(title, options) {
 		this.container = document.createElement('div');
+		this.container.classList.add('filter');
 		const header = document.createElement('h3');
 		header.classList.add('sub-select-header');
 		header.innerText = title;
@@ -903,6 +931,7 @@ class SubSelect {
 		this.container.appendChild(this.selectInput);
 		for (const [broadOption, subOptions] of options) {
 			const optionContainer = document.createElement('div');
+			optionContainer.classList.add('broad-select-container');
 			const broadOptionContainer = document.createElement('div');
 			const broadOptionHtml = document.createElement('button');
 			broadOptionContainer.appendChild(broadOptionHtml);
@@ -1027,6 +1056,8 @@ const urls = {
 };
 
 async function chesscomGames() {
+	const playerInput = document.querySelector('#player-input');
+	playerInput.toggleAttribute('aria-hidden', true);
 	let archives;
 	try {
 		archives = await axios.get(urls.archiveList(username.value));
@@ -1050,6 +1081,7 @@ async function chesscomGames() {
 		}
 	}
 	progressBar.toggleAttribute('aria-hidden');
+	playerInput.toggleAttribute('aria-hidden', false);
 
 	return allGames.flat(1);
 }

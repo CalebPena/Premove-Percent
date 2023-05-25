@@ -17,14 +17,16 @@
     <main>
         <div id="username-page">
             <form id="username-form">
-                <label for="username"></label>
-                <input type="text" value="cm_9000" id="username">
-                <button type="submit">Find</button>
+                <div id="player-input">
+                    <label for="username" id="username-label">Add Player:</label>
+                    <input type="text" value="cm_9000" id="username">
+                    <button type="submit">Find</button>
+                </div>
                 <progress value="0" min="0" aria-hidden></progress>
             </form>
         </div>
         <div id="results-page">
-            <form id="filter-form"></form>
+            <form id="filter-form" aria-hidden></form>
             <div id="game-data"></div>
             <div id="move-data">
                 <div id="total-moves"></div>
