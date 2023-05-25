@@ -1103,6 +1103,4 @@ usernameForm.addEventListener('submit', async (event) => {
 			}
 		}, [])
 	);
-
-	console.log(allGames.games);
 });
