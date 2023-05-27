@@ -159,6 +159,7 @@ class AllGames {
 		progressBar.appendChild(bar);
 		const filter = resultsPage.querySelector(`#${this.filterId}`);
 		return (event) => {
+			console.log(0);
 			if (event) event.preventDefault();
 			filter.appendChild(progressBar);
 			setTimeout(() => {
@@ -1056,14 +1057,8 @@ const urls = {
 };
 
 async function chesscomGames() {
-	const playerInput = document.querySelector('#player-input');
-	playerInput.toggleAttribute('aria-hidden', true);
 	let archives;
-	try {
-		archives = await axios.get(urls.archiveList(username.value));
-	} catch (error) {
-		console.error(error);
-	}
+	archives = await axios.get(urls.archiveList(username.value));
 	const progressBar = document.querySelector('progress');
 	progressBar.setAttribute('max', archives.data.archives.length);
 	let value = 0;
@@ -1080,16 +1075,25 @@ async function chesscomGames() {
 			console.error(error);
 		}
 	}
-	progressBar.toggleAttribute('aria-hidden');
-	playerInput.toggleAttribute('aria-hidden', false);
+	progressBar.toggleAttribute('aria-hidden', true);
 
 	return allGames.flat(1);
 }
 
 usernameForm.addEventListener('submit', async (event) => {
 	event.preventDefault();
+	let rawGames;
 
-	const rawGames = await chesscomGames();
+	const playerInput = document.querySelector('#player-input');
+	playerInput.toggleAttribute('aria-hidden', true);
+	try {
+		rawGames = await chesscomGames();
+	} catch (error) {
+		alert('Player not found');
+		return;
+	} finally {
+		playerInput.toggleAttribute('aria-hidden', false);
+	}
 	allGames.addPlayer(
 		username.value,
 		rawGames.reduce((acc, game) => {
