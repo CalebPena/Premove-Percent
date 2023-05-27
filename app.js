@@ -159,7 +159,6 @@ class AllGames {
 		progressBar.appendChild(bar);
 		const filter = resultsPage.querySelector(`#${this.filterId}`);
 		return (event) => {
-			console.log(0);
 			if (event) event.preventDefault();
 			filter.appendChild(progressBar);
 			setTimeout(() => {
