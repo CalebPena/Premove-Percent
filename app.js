@@ -158,7 +158,7 @@ class AllGames {
 		bar.classList.add('waiting-value');
 		progressBar.appendChild(bar);
 		const filter = resultsPage.querySelector(`#${this.filterId}`);
-		return (event) => {
+		this.currentResultsFunc = (event) => {
 			if (event) event.preventDefault();
 			filter.appendChild(progressBar);
 			setTimeout(() => {
@@ -175,9 +175,11 @@ class AllGames {
 		this.games.set(username, games);
 
 		this.filter = new Filter(this.filterId, this.games);
-		this.results()();
 		const filter = resultsPage.querySelector(`#${this.filterId}`);
-		filter.addEventListener('submit', this.results());
+		filter.removeEventListener('submit', this.currentResultsFunc);
+		this.results();
+		filter.addEventListener('submit', this.currentResultsFunc);
+		this.currentResultsFunc();
 	}
 }
 
